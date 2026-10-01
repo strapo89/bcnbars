@@ -16,8 +16,14 @@
     .eyebrow{text-transform:uppercase;letter-spacing:.16em;font-size:.74rem;color:var(--accent2);font-weight:800}
     h1{font-size:clamp(2.3rem,8vw,5.7rem);line-height:.92;margin:.35rem 0 1rem;max-width:900px;letter-spacing:-.06em}
     .intro{max-width:760px;color:var(--muted);font-size:1.05rem}
-    .controls{position:sticky;top:0;z-index:20;margin:20px 0 26px;padding:12px;background:rgba(12,11,16,.9);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:18px;display:flex;gap:10px;flex-wrap:wrap}
-    button,select{border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--text);padding:11px 14px;font:inherit;font-weight:700;cursor:pointer}
+    .controls{position:sticky;top:8px;z-index:20;margin:20px 0 26px;padding:10px;background:rgba(12,11,16,.9);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:16px;display:flex;gap:8px;flex-wrap:wrap;transition:padding .18s ease,border-radius .18s ease,box-shadow .18s ease}
+    button,select{border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text);padding:9px 11px;font:inherit;font-size:.92rem;font-weight:700;cursor:pointer;min-height:40px}
+    .controls.compact{padding:6px;border-radius:13px;gap:6px;flex-wrap:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.28)}
+    .controls.compact button,.controls.compact select{padding:6px 8px;min-height:34px;font-size:.8rem;border-radius:9px}
+    .controls.compact #geoStatus{display:none}
+    .controls.compact #locate .full-label,.controls.compact #reset .full-label{display:none}
+    .controls.compact #locate .short-label,.controls.compact #reset .short-label{display:inline}
+    .short-label{display:none}
     button.primary{background:var(--accent);border-color:var(--accent)}
     button:active{transform:translateY(1px)}
     #geoStatus{align-self:center;color:var(--muted);font-size:.9rem;flex:1;min-width:210px}
@@ -40,7 +46,7 @@
     footer{padding:34px 0 60px;color:var(--muted);font-size:.86rem}
     [hidden]{display:none!important}
     @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:620px){header{padding-top:38px}.grid{grid-template-columns:1fr}.poster{height:150px}.controls{top:8px}.controls button,.controls select{flex:1 1 auto}.actions{grid-template-columns:1fr 52px}.site{font-size:0}.site:after{content:"↗";font-size:1.1rem}.section-title{align-items:start;flex-direction:column;gap:2px}}
+    @media(max-width:620px){header{padding-top:38px}.grid{grid-template-columns:1fr}.poster{height:150px}.controls{top:6px;margin:12px 0 18px;padding:6px;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.controls::-webkit-scrollbar{display:none}.controls button,.controls select{flex:0 0 auto;min-height:34px;padding:6px 8px;font-size:.8rem}.controls #geoStatus{display:none}.controls #locate .full-label,.controls #reset .full-label{display:none}.controls #locate .short-label,.controls #reset .short-label{display:inline}.actions{grid-template-columns:1fr 52px}.site{font-size:0}.site:after{content:"↗";font-size:1.1rem}.section-title{align-items:start;flex-direction:column;gap:2px}}
   </style>
 </head>
 <body>
@@ -51,8 +57,8 @@
 </header>
 <main class="wrap">
   <div class="controls">
-    <button class="primary" id="locate">📍 Sort by distance</button>
-    <button id="reset">↺ Original order</button>
+    <button class="primary" id="locate"><span class="full-label">📍 Sort by distance</span><span class="short-label">📍 Near me</span></button>
+    <button id="reset"><span class="full-label">↺ Original order</span><span class="short-label">↺ Reset</span></button>
     <select id="area" aria-label="Filter by area">
       <option value="all">All areas</option><option value="central">Raval / Gòtic / Born</option><option value="poblesec">Poble-sec / Sants</option><option value="poblenou">Poblenou</option><option value="gracia">Gràcia</option><option value="outer">Outer / Badalona</option>
     </select>
@@ -96,6 +102,10 @@ function hav(a,b,c,d){const R=6371,toRad=x=>x*Math.PI/180;const dLat=toRad(c-a),
 function mapLink(v){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(v.address)}
 function render(){const filter=area.value;const list=current.filter(v=>filter==='all'||v.area===filter);count.textContent=`${list.length} places`;
  grid.innerHTML=list.map(v=>`<article class="card"><div class="poster"><iframe class="streetview" loading="lazy" title="Street view near ${v.name}" src="https://maps.google.com/maps?q=&layer=c&cbll=${v.lat},${v.lon}&cbp=11,0,0,0,0&output=svembed"></iframe><div class="poster-name">${v.name}</div></div><div class="body"><div class="meta"><span class="tag">${v.hood}</span><span class="tag">${v.type}</span><span class="tag ${v.statusClass}">${v.status}</span></div><p class="desc">${v.desc}</p>${v.distance!=null?`<div class="distance">≈ ${v.distance<1?v.distance.toFixed(1):v.distance.toFixed(1)} km away</div>`:''}<div class="address">${v.address}</div><div class="actions"><a class="map" href="${mapLink(v)}" target="_blank" rel="noopener">Open in Google Maps</a><a class="site" href="${v.site}" target="_blank" rel="noopener" aria-label="Venue website">Site ↗</a></div></div></article>`).join('');}
+const controls=document.querySelector('.controls');
+function updateCompactControls(){controls.classList.toggle('compact',window.scrollY>140);}
+window.addEventListener('scroll',updateCompactControls,{passive:true});
+updateCompactControls();
 area.addEventListener('change',render);
 document.querySelector('#reset').addEventListener('click',()=>{current=[...venues].map(v=>({...v,distance:null}));hasLocation=false;status.textContent='Original order restored.';render();});
 document.querySelector('#locate').addEventListener('click',()=>{
